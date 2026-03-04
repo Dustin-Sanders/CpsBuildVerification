@@ -1,2 +1,5 @@
 #Ignore the wip folder and all its contents
 wip/
+*.zip
+diffs/
+ComparisonLogs

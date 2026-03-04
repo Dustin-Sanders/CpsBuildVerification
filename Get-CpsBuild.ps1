@@ -15,7 +15,7 @@ $SpaceName             = 'CPS'
 $ErrorActionPreference = 'Stop'
 
 #Source functions
-Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName}
+Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
 
 
 #Step 1 — Select a single CPS build and copy it to the local machine
@@ -36,14 +36,42 @@ Write-Host ("  PkgId : {0}" -f $B.PkgId)
 Write-Host ("  PkgVer: {0}" -f $B.PkgVer)
 Write-Host ("  Zip   : {0}" -f $B.ZipPath)
 
+#$B.pkgId = "SOA_DCOTP"
 
 # Step 3 — Download the latest package from Octopus that matches the application from step one.
 
 Write-Host "`nStep 3 - Downloading the latest package from Octopus." -ForegroundColor Cyan
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
-$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\SOA_DCOTP.4.0.6-R1.zip"
-$C.LatestVersion = "4.0.6-R1"
+#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\SOA_DCOTP.4.0.6-R1.zip"
+#$C.LatestVersion = "4.0.6-R1"
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
 #Write-Host "  Downloaded:" $C.DownloadedPath
+
+# ------------------------------------------
+# Step 4 — Compare builds and generate HTML report
+# ------------------------------------------
+Write-Host "`n[Step 4] Compare builds and generate HTML report..." -ForegroundColor Cyan
+
+# 1. Run the Comparison
+$DiffResults = Compare-CpsBuilds -ReferencePath $A.StagedPath -DifferencePath $C.DownloadedPath
+
+Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
+
+# 2. Define the Report Path
+$timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
+$reportName = "Diff_{0}_{1}_vs_{2}_{3}_{4}.html" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
+$reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' $reportName)
+
+# 3. Call the new reporting function (Wrapping $DiffResults in @() for PS 5.1 safety)
+Get-CpsReport -DiffResults @($DiffResults) `
+              -ReportPath $reportPath `
+              -PkgId $B.pkgId `
+              -PkgVer $B.pkgVer `
+              -LatestVersion $C.LatestVersion
+
+# 4. Open the report automatically
+if (Test-Path -LiteralPath $reportPath) {
+    Start-Process $reportPath
+}
