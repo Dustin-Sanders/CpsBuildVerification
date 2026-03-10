@@ -21,7 +21,7 @@ Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.Full
 #Step 1 — Select a single CPS build and copy it to the local machine
 
 Write-Host "`nStep 1 - Select a build " -ForegroundColor Cyan
-$A = Copy-CpsPackage -Drops $Drops -SoaPath $SoaPath -NetAppPath $NetAppPath -Workspace $HomePath
+$A = Copy-CpsPackage -Drops $Drops -SoaPath $SoaPath -NetAppPath $NetAppPath -Workspace "$HomePath\diffs"
 
 Write-Host ("  Artifact: {0}" -f $A.ArtifactName)
 Write-Host ("  Staged to: {0}" -f $A.StagedPath)
@@ -30,7 +30,7 @@ Write-Host ("  Staged to: {0}" -f $A.StagedPath)
 # Step 2 — Compress the CPS build.
 
 Write-Host "`nStep 2 - Compressing the build." -ForegroundColor Cyan
-$B = Compress-CpsPackage -artifactName $A.ArtifactName -Workspace $A.Workspace -StagedPath $A.StagedPath
+$B = Compress-CpsPackage -ArtifactName $A.ArtifactName -Workspace $A.Workspace -StagedPath $A.StagedPath
 
 Write-Host ("  PkgId : {0}" -f $B.PkgId)
 Write-Host ("  PkgVer: {0}" -f $B.PkgVer)
@@ -43,35 +43,66 @@ Write-Host ("  Zip   : {0}" -f $B.ZipPath)
 Write-Host "`nStep 3 - Downloading the latest package from Octopus." -ForegroundColor Cyan
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
-#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\SOA_DCOTP.4.0.6-R1.zip"
+#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\diffs\SOA_DCOTP.4.0.6-R1.zip"
 #$C.LatestVersion = "4.0.6-R1"
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
 #Write-Host "  Downloaded:" $C.DownloadedPath
 
+##### ------------------------------------------
+##### Step 4 — Compare builds and generate HTML report
+##### ------------------------------------------
+####Write-Host "`n[Step 4] Compare builds and generate HTML report..." -ForegroundColor Cyan
+####
+##### 1. Run the Comparison
+####$DiffResults = Compare-CpsBuilds -ReferencePath $A.StagedPath -DifferencePath $C.DownloadedPath
+####
+####Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
+####
+##### 2. Define the Report Path
+####$timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
+####$reportName = "Diff_{0}_{1}_vs_{2}_{3}_{4}.html" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
+####$reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' $reportName)
+####
+##### 3. Call the new reporting function (Wrapping $DiffResults in @() for PS 5.1 safety)
+####Get-CpsReport -DiffResults @($DiffResults) `
+####              -ReportPath $reportPath `
+####              -PkgId $B.pkgId `
+####              -PkgVer $B.pkgVer `
+####              -LatestVersion $C.LatestVersion
+####
+##### 4. Open the report automatically
+####if (Test-Path -LiteralPath $reportPath) {
+####    Start-Process $reportPath
+####}
+
 # ------------------------------------------
-# Step 4 — Compare builds and generate HTML report
+# Step 4 — Compare builds and generate reports
 # ------------------------------------------
-Write-Host "`n[Step 4] Compare builds and generate HTML report..." -ForegroundColor Cyan
+Write-Host "`n[Step 4] Compare builds and generate reports..." -ForegroundColor Cyan
 
 # 1. Run the Comparison
 $DiffResults = Compare-CpsBuilds -ReferencePath $A.StagedPath -DifferencePath $C.DownloadedPath
 
 Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
 
-# 2. Define the Report Path
+# 2. Define the paths
 $timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
-$reportName = "Diff_{0}_{1}_vs_{2}_{3}_{4}.html" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
-$reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' $reportName)
+$baseName   = "Diff_{0}_{1}_vs_{2}_{3}_{4}" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
+$reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.html")
+$csvPath    = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.csv")
 
-# 3. Call the new reporting function (Wrapping $DiffResults in @() for PS 5.1 safety)
+# 3. Generate HTML Report (Your current working report)
 Get-CpsReport -DiffResults @($DiffResults) `
               -ReportPath $reportPath `
               -PkgId $B.pkgId `
               -PkgVer $B.pkgVer `
               -LatestVersion $C.LatestVersion
 
-# 4. Open the report automatically
-if (Test-Path -LiteralPath $reportPath) {
-    Start-Process $reportPath
+# 4. Generate the Temporary CSV for Baseline Profiling
+if ($DiffResults.Count -gt 0) {
+    Export-CpsDiffCsv -DiffResults @($DiffResults) -CsvPath $csvPath
 }
+
+# 5. Open the folder so you can grab the CSVs easily
+Invoke-Item (Split-Path $csvPath)

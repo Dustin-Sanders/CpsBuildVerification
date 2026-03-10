@@ -34,7 +34,8 @@
             [System.IO.Compression.ZipFile]::ExtractToDirectory($Path, $tempDir)
             return @{ Path = $tempDir; IsTemp = $true }
         }
-        return @{ Path = (Resolve-Path -LiteralPath $Path).Path; IsTemp = $false }
+        # Use .ProviderPath instead of .Path to strip the PS 5.1 FileSystem:: prefix from UNC paths
+        return @{ Path = (Resolve-Path -LiteralPath $Path).ProviderPath; IsTemp = $false }
     }
 
     function Compare-JsonObjects {

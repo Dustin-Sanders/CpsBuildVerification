@@ -3,3 +3,4 @@ wip/
 *.zip
 diffs/
 ComparisonLogs
+functions/Export-CpsDiffCsv.ps1

@@ -53,7 +53,8 @@ function Compress-CpsPackage {
                 # Flatten appbin contents up one level into InstanceSource, then remove appbin
                 $SrcGlob = Join-Path $Appbin '*'
                 $DestDir = Join-Path $ContentRoot 'InstanceSource'
-                Move-Item -LiteralPath $SrcGlob -Destination $DestDir -Force -ErrorAction Stop
+                Move-Item -Path $SrcGlob -Destination $DestDir -Force -ErrorAction Stop
+               #Move-Item -Path $Appbin -Destination $DestDir -Force -ErrorAction Stop
                 Remove-Item -LiteralPath $Appbin -Recurse -Force -ErrorAction Stop
             }
         }
@@ -120,7 +121,7 @@ function Compress-CpsPackage {
     }
     Compress-Archive -Path (Join-Path $ContentRoot '*') -DestinationPath $Zip -Force
 
-    [pscustomobject]@{
+    [PSCustomObject]@{
         pkgId        = $PkgId
         pkgVer       = $PkgVer
         ZipPath      = $Zip
