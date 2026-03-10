@@ -1,0 +1,40 @@
+{
+  "GlobalRules": [
+    {
+      "RuleName": "Auto-Approve Messaging Configuration Drift",
+      "Description": "Allows endpoints and routing to drift in messaging configs without failing the build. Shown in report.",
+      "FileMatch": "*Messaging.xml",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve Expected Binary Churn",
+      "Description": "Allows recompilation and new binary dependencies. Missing binaries will still fail the build. Shown in report.",
+      "FileMatch": "*.dll|*.pdb|*.exe",
+      "AllowedChangeTypes": [
+        "BinaryChecksumMismatch",
+        "FileAddedInDifference",
+        "AddedInDifference"
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve Assembly Config Generation",
+      "Description": "Allows auto-generated assembly binding configs to be added or modified. Missing configs will still fail the build. Shown in report.",
+      "FileMatch": "*.dll.config",
+      "AllowedChangeTypes": [
+        "FileAddedInDifference",
+        "AddedInDifference",
+        "LineModified",
+        "LineAddedInDifference",
+        "AttributeValueChanged",
+        "AttributeAddedInDifference",
+        "NodeAddedInDifference",
+        "NodeModifiedInDifference"
+      ],
+      "Action": "Informational"
+    }
+  ]
+}
