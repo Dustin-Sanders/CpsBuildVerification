@@ -7,7 +7,6 @@
 
     $ErrorActionPreference = 'Stop'
 
-    # Updated to include ItemName and ItemProperty
     function New-DiffObject {
         param($fName, $refPath, $diffPath, $cType, $loc, $iName, $iProp, $rVal, $dVal)
         return [pscustomobject]@{
@@ -23,6 +22,20 @@
         }
     }
 
+    # Helper function to define the Tier 1 "Black Hole" exclusions
+    function Test-ShouldIgnorePath {
+        param([string]$RelativePath)
+        
+        # 1. Ignore Database folders entirely
+        if ($RelativePath -match '(^|\\|/)database(\\|/|$)') { return $true }
+        
+        # 2. Ignore specific documentation and data extensions
+        $ext = [System.IO.Path]::GetExtension($RelativePath).ToLower()
+        if ($ext -in @('.xlsx', '.sql', '.dacpac', '.txt')) { return $true }
+        
+        return $false
+    }
+
     function Resolve-RootPath {
         param([string]$Path)
         if (-not (Test-Path -LiteralPath $Path)) { throw "Path not found: $Path" }
@@ -34,8 +47,7 @@
             [System.IO.Compression.ZipFile]::ExtractToDirectory($Path, $tempDir)
             return @{ Path = $tempDir; IsTemp = $true }
         }
-        # Use .ProviderPath instead of .Path to strip the PS 5.1 FileSystem:: prefix from UNC paths
-        return @{ Path = (Resolve-Path -LiteralPath $Path).ProviderPath; IsTemp = $false }
+        return @{ Path = (Resolve-Path -LiteralPath $Path).Path; IsTemp = $false }
     }
 
     function Compare-JsonObjects {
@@ -91,7 +103,6 @@
             return
         }
 
-        # Compare Attributes
         $allAttrs = @()
         if ($RefNode.Attributes) { $allAttrs += $RefNode.Attributes | Select-Object -ExpandProperty Name }
         if ($DiffNode.Attributes) { $allAttrs += $DiffNode.Attributes | Select-Object -ExpandProperty Name }
@@ -111,7 +122,6 @@
             }
         }
 
-        # Compare Inner Text
         if (-not $RefNode.HasChildNodes -and -not $DiffNode.HasChildNodes) {
             $rComp = [string]$RefNode.InnerText -replace '\s+', ''
             $dComp = [string]$DiffNode.InnerText -replace '\s+', ''
@@ -121,11 +131,9 @@
             return
         }
 
-        # Smart Signature Matching for Child Nodes
         $refChildren = @{}
         $diffChildren = @{}
 
-        # Helper to identify nodes by their key, name, or id attribute
         function Get-NodeSignature($n) {
             if ($n.HasAttribute('key')) { return "$($n.Name)[@key='$($n.GetAttribute('key'))']" }
             if ($n.HasAttribute('name')) { return "$($n.Name)[@name='$($n.GetAttribute('name'))']" }
@@ -156,12 +164,10 @@
             $dChild = $diffChildren[$sigKey]
             $baseSig = ($sigKey -split '\|__\|')[0]
             
-            # Split the ItemName (e.g., 'BypassJXServiceLocalTestPANFile') from the pure Path (/configuration/appSettings/add)
             $iName = $baseSig
             $cPath = "$CurrentPath/$baseSig"
             if ($baseSig -match "\[@(key|name|id)='([^']+)'\]") {
                 $iName = $matches[2]
-                # PS 5.1 Fix: Perform the replace on a separate line to avoid nested quote parsing errors
                 $cleanSig = $baseSig -replace "\[@(key|name|id)='[^']+'\]", ""
                 $cPath = "$CurrentPath/$cleanSig"
             }
@@ -192,19 +198,26 @@
 
     foreach ($f in $refFiles) {
         $rel = $f.FullName.Substring($refRoot.Length).TrimStart('\', '/')
+        
+        # Apply Tier 1 Exclusions BEFORE hashing
+        if (Test-ShouldIgnorePath $rel) { continue }
+        
         $refMap[$rel] = @{ FullPath = $f.FullName; Hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash }
         $allRelativePaths.Add($rel) | Out-Null
     }
 
     foreach ($f in $diffFiles) {
         $rel = $f.FullName.Substring($diffRoot.Length).TrimStart('\', '/')
+        
+        # Apply Tier 1 Exclusions BEFORE hashing
+        if (Test-ShouldIgnorePath $rel) { continue }
+        
         $diffMap[$rel] = @{ FullPath = $f.FullName; Hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash }
         $allRelativePaths.Add($rel) | Out-Null
     }
 
     $masterDiffList = New-Object System.Collections.Generic.List[object]
 
-    # Extract just the root folder/zip name (e.g., "SOA_DCOTP_4.1.0.1_2026.02.04_R.1")
     $refRootName = Split-Path -Path $ReferencePath -Leaf
     $diffRootName = Split-Path -Path $DifferencePath -Leaf
 
@@ -215,7 +228,6 @@
         $fileName = [System.IO.Path]::GetFileName($relPath)
         $relDir = [System.IO.Path]::GetDirectoryName($relPath)
 
-        # Build the clean path: RootName + \ + SubDirectory (if it exists). The file name is stripped.
         $rPath = "MISSING"
         if ($inRef) {
             $rPath = if ([string]::IsNullOrEmpty($relDir)) { $refRootName } else { "$refRootName\$relDir" }
@@ -240,6 +252,12 @@
         $refFile = $refMap[$relPath].FullPath
         $diffFile = $diffMap[$relPath].FullPath
         $ext = [System.IO.Path]::GetExtension($relPath).ToLower()
+
+        # Handle extensionless files directly as binaries
+        if ([string]::IsNullOrEmpty($ext)) {
+            $masterDiffList.Add((New-DiffObject $fileName $rPath $dPath 'BinaryChecksumMismatch' 'Entire File' 'Binary' 'Hash' $refMap[$relPath].Hash $diffMap[$relPath].Hash))
+            continue
+        }
 
         switch ($ext) {
             { $_ -match '\.json$' } {
@@ -301,7 +319,6 @@
                         $cType = if ($rComp -eq '') { 'LineAddedInDifference' } elseif ($dComp -eq '') { 'LineMissingInDifference' } else { 'LineModified' }
                         $locNum = if ($rObj) { $rObj.Line } else { $dObj.Line }
                         
-                        # Populate new object schema for text files
                         $masterDiffList.Add((New-DiffObject $fileName $rPath $dPath $cType 'Entire File' "Line $locNum" 'Text' $rStr $dStr))
                     }
                 }
