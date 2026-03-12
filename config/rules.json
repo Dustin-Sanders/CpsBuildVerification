@@ -11,28 +11,61 @@
     },
     {
       "RuleName": "Auto-Approve Expected Binary Churn",
-      "Description": "Allows recompilation and new binary dependencies. Missing binaries will still fail the build. Shown in report.",
+      "Description": "Allows recompilation and new binary dependencies. Deleted binaries will still fail the build. Shown in report.",
       "FileMatch": "*.dll|*.pdb|*.exe",
       "AllowedChangeTypes": [
         "BinaryChecksumMismatch",
-        "FileAddedInDifference",
-        "AddedInDifference"
+        "FileMissingInDifference",
+        "MissingInDifference"
       ],
       "Action": "Informational"
     },
     {
       "RuleName": "Auto-Approve Assembly Config Generation",
-      "Description": "Allows auto-generated assembly binding configs to be added or modified. Missing configs will still fail the build. Shown in report.",
+      "Description": "Accepts all changes to auto-generated assembly configs. Shown in report.",
       "FileMatch": "*.dll.config",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve XML and Config Deletions",
+      "Description": "Allows deletion and modification of XML elements/attributes. Fails the build if new elements/attributes are added.",
+      "FileMatch": "*.config|*.xml",
+      "AllowedChangeTypes": [
+        "FileAddedInDifference",
+        "NodeAddedInDifference",
+        "AttributeAddedInDifference",
+        "LineAddedInDifference",
+        "NodeModifiedInDifference",
+        "AttributeValueChanged",
+        "InnerTextChanged",
+        "LineModified"
+								  
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve JSON Deletions",
+      "Description": "Allows deletion and modification of JSON properties. Fails the build if new properties are added.",
+      "FileMatch": "*.json",
       "AllowedChangeTypes": [
         "FileAddedInDifference",
         "AddedInDifference",
+        "ValueChanged",
+        "TypeOrNullMismatch"
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve ASPX UI Changes",
+      "Description": "Allows modifications to ASPX pages. Shown in report.",
+      "FileMatch": "*.aspx",
+      "AllowedChangeTypes": [
         "LineModified",
         "LineAddedInDifference",
-        "AttributeValueChanged",
-        "AttributeAddedInDifference",
-        "NodeAddedInDifference",
-        "NodeModifiedInDifference"
+        "LineMissingInDifference"
       ],
       "Action": "Informational"
     }

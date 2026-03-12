@@ -122,7 +122,14 @@
             }
         }
 
-        if (-not $RefNode.HasChildNodes -and -not $DiffNode.HasChildNodes) {
+        # --- FIX 1: Stop Recursion if nodes only contain text/whitespace (no child elements) ---
+        $rHasElements = $false
+        foreach ($cn in $RefNode.ChildNodes) { if ($cn.NodeType -eq 'Element') { $rHasElements = $true; break } }
+        
+        $dHasElements = $false
+        foreach ($cn in $DiffNode.ChildNodes) { if ($cn.NodeType -eq 'Element') { $dHasElements = $true; break } }
+
+        if (-not $rHasElements -and -not $dHasElements) {
             $rComp = [string]$RefNode.InnerText -replace '\s+', ''
             $dComp = [string]$DiffNode.InnerText -replace '\s+', ''
             if ($rComp -ne $dComp) {
@@ -134,10 +141,13 @@
         $refChildren = @{}
         $diffChildren = @{}
 
+        # --- FIX 2: Safely check for attributes ONLY on actual XmlElements ---
         function Get-NodeSignature($n) {
-            if ($n.HasAttribute('key')) { return "$($n.Name)[@key='$($n.GetAttribute('key'))']" }
-            if ($n.HasAttribute('name')) { return "$($n.Name)[@name='$($n.GetAttribute('name'))']" }
-            if ($n.HasAttribute('id')) { return "$($n.Name)[@id='$($n.GetAttribute('id'))']" }
+            if ($n -is [System.Xml.XmlElement]) {
+                if ($n.HasAttribute('key')) { return "$($n.Name)[@key='$($n.GetAttribute('key'))']" }
+                if ($n.HasAttribute('name')) { return "$($n.Name)[@name='$($n.GetAttribute('name'))']" }
+                if ($n.HasAttribute('id')) { return "$($n.Name)[@id='$($n.GetAttribute('id'))']" }
+            }
             return $n.Name
         }
 
@@ -269,7 +279,7 @@
                     foreach ($d in $fileDiffs) { 
                         $masterDiffList.Add((New-DiffObject $fileName $rPath $dPath $d.ChangeType $d.Location $d.ItemName $d.ItemProperty $d.RefValue $d.DiffValue))
                     }
-                } catch { $masterDiffList.Add((New-DiffObject $fileName $rPath $dPath 'ParseError' 'Entire File' 'JSON' 'Error' 'Error' 'Error')) }
+                } catch { $masterDiffList.Add((New-DiffObject $fileName $rPath $dPath 'Parse Error' 'Entire File' 'JSON' 'Error' 'Error' 'Error')) }
             }
             { $_ -match '\.(xml|config)$' } {
                 try {

@@ -17,15 +17,13 @@ $ErrorActionPreference = 'Stop'
 #Source functions
 Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
 
-
 #Step 1 — Select a single CPS build and copy it to the local machine
 
 Write-Host "`nStep 1 - Select a build " -ForegroundColor Cyan
 $A = Copy-CpsPackage -Drops $Drops -SoaPath $SoaPath -NetAppPath $NetAppPath -Workspace "$HomePath\diffs"
 
-Write-Host ("  Artifact: {0}" -f $A.ArtifactName)
+Write-Host ("  Artifact: {0}"  -f $A.ArtifactName)
 Write-Host ("  Staged to: {0}" -f $A.StagedPath)
-
 
 # Step 2 — Compress the CPS build.
 
@@ -44,37 +42,11 @@ Write-Host "`nStep 3 - Downloading the latest package from Octopus." -Foreground
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
 #$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\diffs\SOA_DCOTP.4.0.6-R1.zip"
+#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\wip\SOA_DCOTP.4.0.6-R1"
 #$C.LatestVersion = "4.0.6-R1"
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
 #Write-Host "  Downloaded:" $C.DownloadedPath
-
-##### ------------------------------------------
-##### Step 4 — Compare builds and generate HTML report
-##### ------------------------------------------
-####Write-Host "`n[Step 4] Compare builds and generate HTML report..." -ForegroundColor Cyan
-####
-##### 1. Run the Comparison
-####$DiffResults = Compare-CpsBuilds -ReferencePath $A.StagedPath -DifferencePath $C.DownloadedPath
-####
-####Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
-####
-##### 2. Define the Report Path
-####$timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
-####$reportName = "Diff_{0}_{1}_vs_{2}_{3}_{4}.html" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
-####$reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' $reportName)
-####
-##### 3. Call the new reporting function (Wrapping $DiffResults in @() for PS 5.1 safety)
-####Get-CpsReport -DiffResults @($DiffResults) `
-####              -ReportPath $reportPath `
-####              -PkgId $B.pkgId `
-####              -PkgVer $B.pkgVer `
-####              -LatestVersion $C.LatestVersion
-####
-##### 4. Open the report automatically
-####if (Test-Path -LiteralPath $reportPath) {
-####    Start-Process $reportPath
-####}
 
 # ------------------------------------------
 # Step 4 — Compare builds and generate reports
