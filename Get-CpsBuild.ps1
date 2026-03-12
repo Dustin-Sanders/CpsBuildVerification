@@ -65,6 +65,7 @@ $reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.html
 $csvPath    = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.csv")
 
 # 3. Generate HTML Report (Your current working report)
+#Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
 Get-CpsReport -DiffResults @($DiffResults) `
               -ReportPath $reportPath `
               -PkgId $B.pkgId `

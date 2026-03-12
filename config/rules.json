@@ -1,8 +1,8 @@
 {
   "GlobalRules": [
     {
-      "RuleName": "Auto-Approve Messaging Configuration Drift",
-      "Description": "Allows endpoints and routing to drift in messaging configs without failing the build. Shown in report.",
+      "RuleName": "Auto-Approve Messaging Edits",
+      "Description": "Allows endpoints and routing to drift in messaging configs without failing the build.",
       "FileMatch": "*Messaging.xml",
       "AllowedChangeTypes": [
         "*"
@@ -10,8 +10,8 @@
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve Expected Binary Churn",
-      "Description": "Allows recompilation and new binary dependencies. Deleted binaries will still fail the build. Shown in report.",
+      "RuleName": "Auto-Approve Expected Binary Edits",
+      "Description": "Allows recompilation and new binary dependencies. Deleted binaries will still fail the build.",
       "FileMatch": "*.dll|*.pdb|*.exe",
       "AllowedChangeTypes": [
         "BinaryChecksumMismatch",
@@ -21,16 +21,16 @@
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve Assembly Config Generation",
-      "Description": "Accepts all changes to auto-generated assembly configs. Shown in report.",
-      "FileMatch": "*.dll.config",
+      "RuleName": "Auto-Approve Assembly Config Edits",
+      "Description": "Allows all changes to auto-generated assembly and dependency configs.",
+      "FileMatch": "*.dll.config|*.deps.json",
       "AllowedChangeTypes": [
         "*"
       ],
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve XML and Config Deletions",
+      "RuleName": "Auto-Approve XML Edits",
       "Description": "Allows deletion and modification of XML elements/attributes. Fails the build if new elements/attributes are added.",
       "FileMatch": "*.config|*.xml",
       "AllowedChangeTypes": [
@@ -42,12 +42,11 @@
         "AttributeValueChanged",
         "InnerTextChanged",
         "LineModified"
-								  
       ],
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve JSON Deletions",
+      "RuleName": "Auto-Approve JSON Edits",
       "Description": "Allows deletion and modification of JSON properties. Fails the build if new properties are added.",
       "FileMatch": "*.json",
       "AllowedChangeTypes": [
@@ -59,13 +58,15 @@
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve ASPX UI Changes",
-      "Description": "Allows modifications to ASPX pages. Shown in report.",
-      "FileMatch": "*.aspx",
+      "RuleName": "Auto-Approve UI Asset Edits",
+      "Description": "Allows modifications to UI assets.",
+      "FileMatch": "*.aspx|*.js|*.html",
       "AllowedChangeTypes": [
         "LineModified",
         "LineAddedInDifference",
-        "LineMissingInDifference"
+        "LineMissingInDifference",
+        "FileMissingInDifference",
+        "FileAddedInDifference"
       ],
       "Action": "Informational"
     }

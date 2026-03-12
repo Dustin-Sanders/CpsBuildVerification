@@ -262,6 +262,14 @@
                 .sort(comparer(idx, !isAsc))
                 .forEach(tr => tbody.appendChild(tr));
         }));
+
+        // --- Default Sort (Status Descending) ---
+        // Simulates a click on the first header ('Status') to bubble 'Reject' to the top.
+        const statusHeader = document.querySelector('th');
+        if (statusHeader) {
+            statusHeader.classList.add('asc'); // Prime it so the first click makes it descending
+            statusHeader.click();
+        }
     </script>
 </body>
 </html>
