@@ -1,18 +1,26 @@
 ﻿#Script v1.0.0
 
-#$Source      = Get-ChildItem "C:\Users\DuSanders\documents\ArtifactDefintionScripts\" -Include "functions", "Get-CpsBuild.ps1" -Recurse
+#$Source      = Get-ChildItem "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\*" #-Recurse #-Include "functions", "Get-CpsBuild.ps1" -Recurse
 #$Destination = "C:\Users\DuSanders\OneDrive - Jack Henry\Documents\_CPS_2021\PowerShell\ArtifactDefinitionScripts"
-#Copy-Item -Path $Source -Destination "$Destination" -Recurse -Force
+#Copy-Item -Path $Source -Destination "$Destination" -Force
 
 #Configuration variables
 $HomePath              = "$PSScriptRoot"
-$Drops                 = "\\ATXCPSBLD01\Drops"
-$SoaPath               = "\\ATXCPSBLD01\Drops\PPSSOA\MAIN\Applications"
-$NetAppPath            = "\\ATXCPSBLD01\Drops\NET\NET_APP_SERVER\NET_APP_SERVER_V2.0.0_2021.09.10_B.1"
-$OctopusUrl            = 'https://octopus.jhapps.com' #octopus.ecpr.com (Andrew's team)
-$ApiKey                = 'API-7M1JODCCUSCO1PR1DKYFHFOB9EU8FKT'
-$SpaceName             = 'CPS'
 $ErrorActionPreference = 'Stop'
+
+# Load parameters from config file
+$parametersPath = Join-Path $HomePath "config\parameters.json"
+if (-not (Test-Path -LiteralPath $parametersPath)) {
+    throw "Configuration file not found: $parametersPath"
+}
+$Config = Get-Content $parametersPath -Raw | ConvertFrom-Json
+
+$Drops      = $Config.Drops
+$SoaPath    = $Config.SoaPath
+$NetAppPath = $Config.NetAppPath
+$OctopusUrl = $Config.OctopusUrl
+$ApiKey     = $Config.ApiKey
+$SpaceName  = $Config.SpaceName
 
 #Source functions
 Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
@@ -34,19 +42,12 @@ Write-Host ("  PkgId : {0}" -f $B.PkgId)
 Write-Host ("  PkgVer: {0}" -f $B.PkgVer)
 Write-Host ("  Zip   : {0}" -f $B.ZipPath)
 
-#$B.pkgId = "SOA_DCOTP"
-
 # Step 3 — Download the latest package from Octopus that matches the application from step one.
 
 Write-Host "`nStep 3 - Downloading the latest package from Octopus." -ForegroundColor Cyan
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
-#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\diffs\SOA_DCOTP.4.0.6-R1.zip"
-#$C.DownloadedPath = "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\wip\SOA_DCOTP.4.0.6-R1"
-#$C.LatestVersion = "4.0.6-R1"
-
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
-#Write-Host "  Downloaded:" $C.DownloadedPath
 
 # ------------------------------------------
 # Step 4 — Compare builds and generate reports
