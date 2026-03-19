@@ -6,21 +6,20 @@
 
 #Configuration variables
 $HomePath              = "$PSScriptRoot"
-$ErrorActionPreference = 'Stop'
 
-# Load parameters from config file
 $parametersPath = Join-Path $HomePath "config\parameters.json"
 if (-not (Test-Path -LiteralPath $parametersPath)) {
     throw "Configuration file not found: $parametersPath"
 }
-$Config = Get-Content $parametersPath -Raw | ConvertFrom-Json
 
-$Drops      = $Config.Drops
-$SoaPath    = $Config.SoaPath
-$NetAppPath = $Config.NetAppPath
-$OctopusUrl = $Config.OctopusUrl
-$ApiKey     = $Config.ApiKey
-$SpaceName  = $Config.SpaceName
+$Config                = Get-Content $parametersPath -Raw | ConvertFrom-Json
+$Drops                 = $Config.Drops
+$SoaPath               = $Config.SoaPath
+$NetAppPath            = $Config.NetAppPath
+$OctopusUrl            = $Config.OctopusUrl
+$ApiKey                = $Config.ApiKey
+$SpaceName             = $Config.SpaceName
+$ErrorActionPreference = 'Stop'
 
 #Source functions
 Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }

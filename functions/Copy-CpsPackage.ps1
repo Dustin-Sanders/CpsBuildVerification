@@ -63,7 +63,7 @@ function Copy-CpsPackage {
     $ArtifactPath = $null
     $StagedPath   = $null
     $AppFamily    = $AppPath.Name
-    $Exclude      = @("Database*", "Document*")
+    $Exclude      = @("Database*", "Document*","*.zip")
 
     # --------------------------
     # PPSSOA Logic

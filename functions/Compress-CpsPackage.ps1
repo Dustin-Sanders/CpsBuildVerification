@@ -3,7 +3,7 @@
   Step 2 — Package build (derive Octopus package ID/version and zip)
 
 .DESCRIPTION
-  Derives pkgId and pkgVer from artifactName, performs any layout adjustments
+  Derives pkgId and pkgVer from the staged folder name, performs any layout adjustments
   (e.g., RTP appbin flatten), and compresses the staged content.
 
 .PARAMETER artifactName
@@ -39,7 +39,9 @@ function Compress-CpsPackage {
         throw "Content root not found: '$ContentRoot'."
     }
 
-    $Parts = $ArtifactName -split '_'
+    # FIX: Parse the actual folder name (which includes the app prefix) instead of the raw ArtifactName
+    $FolderName = Split-Path $ContentRoot -Leaf
+    $Parts = $FolderName -split '_'
     $PkgId = $null
     $PkgVer = $null
 
@@ -50,11 +52,9 @@ function Compress-CpsPackage {
 
             $Appbin = Join-Path $ContentRoot 'InstanceSource\appbin'
             if (Test-Path -LiteralPath $Appbin) {
-                # Flatten appbin contents up one level into InstanceSource, then remove appbin
                 $SrcGlob = Join-Path $Appbin '*'
                 $DestDir = Join-Path $ContentRoot 'InstanceSource'
                 Move-Item -Path $SrcGlob -Destination $DestDir -Force -ErrorAction Stop
-               #Move-Item -Path $Appbin -Destination $DestDir -Force -ErrorAction Stop
                 Remove-Item -LiteralPath $Appbin -Recurse -Force -ErrorAction Stop
             }
         }
@@ -103,14 +103,19 @@ function Compress-CpsPackage {
             $PkgId = 'EAD_CPSPTL'
             $PortalParts = $Parts[1] -split '-'
             if ($PortalParts.Count -lt 3) {
-                throw "Unable to parse CPSPortal version from '$ArtifactName'. Expected '<branch>-<something>-<version>'."
+                throw "Unable to parse CPSPortal version from '$FolderName'. Expected '<branch>-<something>-<version>'."
             }
             $PkgVer = $PortalParts[2]
+        }
+
+        { $Parts.Count -ge 3 -and $Parts[0] -eq 'FSC' -and $Parts[1] -match '^(Letters|Statements)$' } {
+            $PkgId  = if ($Parts[1] -eq 'Letters') { 'ETL_FSCLTRS' } else { 'ETL_FSCSTMNT' }
+            $PkgVer = $Parts[2]
         }
     }
 
     if (-not $PkgId -or -not $PkgVer) {
-        throw "Could not derive pkgId/pkgVer from artifactName '$ArtifactName'. Parts: $($Parts -join ', ')"
+        throw "Could not derive pkgId/pkgVer from artifactName '$FolderName'. Parts: $($Parts -join ', ')"
     }
 
     $Zip = Join-Path $Workspace ("{0}.{1}.zip" -f $PkgId, $PkgVer)
