@@ -1,4 +1,4 @@
-﻿#Script v1.0.0
+﻿#Script v1.0.5
 
 #$Source      = Get-ChildItem "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\*" #-Recurse #-Include "functions", "Get-CpsBuild.ps1" -Recurse
 #$Destination = "C:\Users\DuSanders\OneDrive - Jack Henry\Documents\_CPS_2021\PowerShell\ArtifactDefinitionScripts"
@@ -6,20 +6,21 @@
 
 #Configuration variables
 $HomePath              = "$PSScriptRoot"
-
-$parametersPath = Join-Path $HomePath "config\parameters.json"
-if (-not (Test-Path -LiteralPath $parametersPath)) {
-    throw "Configuration file not found: $parametersPath"
-}
-
-$Config                = Get-Content $parametersPath -Raw | ConvertFrom-Json
-$Drops                 = $Config.Drops
-$SoaPath               = $Config.SoaPath
-$NetAppPath            = $Config.NetAppPath
-$OctopusUrl            = $Config.OctopusUrl
-$ApiKey                = $Config.ApiKey
-$SpaceName             = $Config.SpaceName
 $ErrorActionPreference = 'Stop'
+
+# Load parameters from config file
+$ParametersPath = Join-Path $HomePath "config\parameters.json"
+if (-not (Test-Path -LiteralPath $ParametersPath)) {
+    throw "Configuration file not found: $ParametersPath"
+}
+$Config = Get-Content $ParametersPath -Raw | ConvertFrom-Json
+
+$Drops      = $Config.Drops
+$SoaPath    = $Config.SoaPath
+$NetAppPath = $Config.NetAppPath
+$OctopusUrl = $Config.OctopusUrl
+$ApiKey     = $Config.ApiKey
+$SpaceName  = $Config.SpaceName
 
 #Source functions
 Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
@@ -48,13 +49,27 @@ $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceNa
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
 
+# Set the default comparison paths
+$ReferencePath = $A.StagedPath
+$DifferencePath = $C.DownloadedPath
+
+# ------------------------------------------
+# Step 3.5 — Package FSC Full Build
+# ------------------------------------------
+if ($B.pkgId -match '^ETL_FSC') {
+    Write-Host "`nStep 3.5 - Packaging full build for FSC." -ForegroundColor Cyan
+    
+    # Call the new function and overwrite the ReferencePath with the returned folder
+    $ReferencePath = Package-FscBuild -OctopusZipPath $C.DownloadedPath -PartialDropPath $A.StagedPath -Workspace $A.Workspace -PkgId $B.pkgId -PkgVer $B.pkgVer
+}
+
 # ------------------------------------------
 # Step 4 — Compare builds and generate reports
 # ------------------------------------------
 Write-Host "`n[Step 4] Compare builds and generate reports..." -ForegroundColor Cyan
 
 # 1. Run the Comparison
-$DiffResults = Compare-CpsBuilds -ReferencePath $A.StagedPath -DifferencePath $C.DownloadedPath
+$DiffResults = Compare-CpsBuilds -ReferencePath $ReferencePath -DifferencePath $DifferencePath
 
 Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
 
@@ -64,13 +79,8 @@ $baseName   = "Diff_{0}_{1}_vs_{2}_{3}_{4}" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C
 $reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.html")
 $csvPath    = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.csv")
 
-# 3. Generate HTML Report (Your current working report)
-#Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
-Get-CpsReport -DiffResults @($DiffResults) `
-              -ReportPath $reportPath `
-              -PkgId $B.pkgId `
-              -PkgVer $B.pkgVer `
-              -LatestVersion $C.LatestVersion
+# 3. Generate HTML Report
+Get-CpsReport -DiffResults @($DiffResults) -ReportPath $reportPath -PkgId $B.pkgId -PkgVer $B.pkgVer -LatestVersion $C.LatestVersion
 
 # 4. Generate the Temporary CSV for Baseline Profiling
 if ($DiffResults.Count -gt 0) {

@@ -5,3 +5,4 @@ diffs/
 ComparisonLogs
 functions/Export-CpsDiffCsv.ps1
 config/parameters.json
+Compare-LocalBuilds.ps1

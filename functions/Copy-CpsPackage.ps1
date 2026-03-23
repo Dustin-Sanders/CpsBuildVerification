@@ -1,7 +1,6 @@
-﻿#Version 1.0.0
+﻿#Version 1.0.3
 
 function Copy-CpsPackage {
-	
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)][string]$Drops,
@@ -26,13 +25,17 @@ function Copy-CpsPackage {
         param(
             [Parameter(Mandatory=$true)][string]$Source,
             [Parameter(Mandatory=$true)][string]$Destination,
+            [switch]$Overlay,
             [string[]]$Exclude = @()
         )
 
         # Ensure destination exists
         New-Item -ItemType Directory -Force -Path $Destination | Out-Null
 
-        $args = @($Source, $Destination, '/MIR', '/ETA')
+        # If Overlay is requested, use /E (recursive copy without purging). Otherwise, use /MIR.
+        $mode = if ($Overlay) { '/E' } else { '/MIR' }
+        
+        $args = @($Source, $Destination, $mode, '/ETA')
         if ($Exclude -and $Exclude.Count) {
             $args += '/XD'
             $args += $Exclude
@@ -63,7 +66,7 @@ function Copy-CpsPackage {
     $ArtifactPath = $null
     $StagedPath   = $null
     $AppFamily    = $AppPath.Name
-    $Exclude      = @("Database*", "Document*","*.zip")
+    $Exclude      = @("Database*", "Document*", "*.zip")
 
     # --------------------------
     # PPSSOA Logic
@@ -115,6 +118,8 @@ function Copy-CpsPackage {
                 if (-not $Artifact) { throw "No artifact selected under '$($AppPath.FullName)'." }
 
                 $Dest = Join-Path $Workspace ("{0}_{1}" -f $AppPath.Name, $Artifact.Name)
+                
+                Write-Host "  Copying selected artifact $($Artifact.Name)..." -ForegroundColor DarkGray
                 Copy-App -Source $Artifact.FullName -Destination $Dest
 
                 $ArtifactPath = $Artifact

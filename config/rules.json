@@ -12,11 +12,10 @@
     {
       "RuleName": "Auto-Approve Expected Binary Edits",
       "Description": "Allows recompilation and new binary dependencies. Deleted binaries will still fail the build.",
-      "FileMatch": "*.dll|*.pdb|*.exe",
+      "FileMatch": "*.dll|*.pdb|*.exe|*.jar",
       "AllowedChangeTypes": [
         "BinaryChecksumMismatch",
-        "FileMissingInDifference",
-        "MissingInDifference"
+        "FileMissingInDifference"
       ],
       "Action": "Informational"
     },
@@ -69,6 +68,28 @@
         "FileAddedInDifference"
       ],
       "Action": "Informational"
-    }
+    },
+    {
+      "RuleName": "Auto-Approve FSC PowerShell Scripts",
+      "Description": "Ignores cascading line differences in script files for FSC Letters and Statements.",
+      "FileMatch": "*.ps1|*.psd1",
+      "PathMatch": "*FSC_Letters*|*FSC_Statements*|*ETL_FSCLTRS*|*ETL_FSCSTMNT*",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Hide"
+    },
+	{
+      "RuleName": "Auto-Approve CPS SG UI > ng > assets",
+      "Description": "Ignores cascading line differences in script files for FSC Letters and Statements.",
+      "FileMatch": "*.png|*.ico|*.gif|*.css|*.sqlite|*.eot|*.tff|*.svg|*.woff",
+      "PathMatch": "*CPSServicesGateway*|*SOA_CPSSG*",
+      "AllowedChangeTypes": [
+        "FileMissingInDifference",
+		"BinaryChecksumMismatch",
+		"FileAddedInDifference"
+      ],
+      "Action": "Informational"
+    }    
   ]
 }

@@ -1,4 +1,5 @@
-﻿function Get-CpsReport {
+﻿#v1.0.2
+function Get-CpsReport {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -30,7 +31,6 @@
     $approvedCount = 0
     $rejectedCount = 0
 
-    # Ensure array processing even if only a single object was passed (or empty)
     $resultsArray = @($DiffResults)
 
     foreach ($diff in $resultsArray) {
@@ -45,6 +45,19 @@
                     $isMatch = $true
                     break
                 }
+            }
+
+            # --- Path Matching Logic ---
+            if ($isMatch -and $null -ne $rule.PathMatch) {
+                $pathMatch = $false
+                $pathPatterns = $rule.PathMatch -split '\|'
+                foreach ($pp in $pathPatterns) {
+                    if ($diff.ReferenceFullPath -like $pp -or $diff.DifferenceFullPath -like $pp) {
+                        $pathMatch = $true
+                        break
+                    }
+                }
+                $isMatch = $pathMatch
             }
 
             if ($isMatch) {
@@ -72,6 +85,9 @@
     $finalStatus = if ($rejectedCount -eq 0) { "Approved" } else { "Rejected" }
 
     Write-Host "  Building HTML report..." -ForegroundColor DarkGray
+
+    # --- NEW: Filter out 'Hide' items before generating HTML ---
+    $visibleResults = @($resultsArray | Where-Object { $_.Status -ne "Hide" })
 
     $HtmlHead = @"
 <!DOCTYPE html>
@@ -167,13 +183,12 @@
 
     $HtmlBody = New-Object System.Text.StringBuilder
 
-    if ($resultsArray.Count -eq 0) {
-        # 10 columns total
+    if ($visibleResults.Count -eq 0) {
         [void]$HtmlBody.AppendLine("<tr class='InformationalRow'>")
-        [void]$HtmlBody.AppendLine("<td colspan='10' style='text-align: center; padding: 30px; font-size: 16px; color: inherit;'><strong>No differences found between the two builds. They are identical.</strong></td>")
+        [void]$HtmlBody.AppendLine("<td colspan='10' style='text-align: center; padding: 30px; font-size: 16px; color: inherit;'><strong>No differences found (or all differences have been successfully approved and hidden).</strong></td>")
         [void]$HtmlBody.AppendLine("</tr>")
     } else {
-        foreach ($diff in $resultsArray) {
+        foreach ($diff in $visibleResults) {
             $rowClass = if ($diff.Status -eq "Reject") { "RejectRow" } else { "InformationalRow" }
 
             $fName = if ($null -ne $diff.FileName) { $diff.FileName } else { $diff.File }
@@ -264,10 +279,9 @@
         }));
 
         // --- Default Sort (Status Descending) ---
-        // Simulates a click on the first header ('Status') to bubble 'Reject' to the top.
         const statusHeader = document.querySelector('th');
         if (statusHeader) {
-            statusHeader.classList.add('asc'); // Prime it so the first click makes it descending
+            statusHeader.classList.add('asc'); 
             statusHeader.click();
         }
     </script>
