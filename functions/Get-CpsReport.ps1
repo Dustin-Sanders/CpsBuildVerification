@@ -209,7 +209,7 @@ function Get-CpsReport {
 
     if ($visibleResults.Count -eq 0) {
         [void]$HtmlBody.AppendLine("<tr class='InformationalRow'>")
-        [void]$HtmlBody.AppendLine("<td colspan='10' style='text-align: center; padding: 30px; font-size: 16px; color: inherit;'><strong>No differences found (or all differences have been successfully approved and hidden).</strong></td>")
+        [void]$HtmlBody.AppendLine("<td colspan='10' style='text-align: center; padding: 30px; font-size: 16px; color: inherit;'><strong>No differences found (or all differences have been successfully approved).</strong></td>")
         [void]$HtmlBody.AppendLine("</tr>")
     } else {
         foreach ($diff in $visibleResults) {

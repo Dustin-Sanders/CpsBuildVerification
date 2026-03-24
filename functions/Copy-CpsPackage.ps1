@@ -131,7 +131,13 @@ function Copy-CpsPackage {
                 $Artifact = Select-Folder -Path $AppPath.FullName
                 if (-not $Artifact) { throw "No artifact selected under '$($AppPath.FullName)'." }
 
-                $Dest = Join-Path $Workspace $Artifact.Name
+                $DestName = $Artifact.Name
+                
+                if ($DestName -notmatch '_') {
+                    $DestName = "{0}_{1}" -f $AppPath.Name, $DestName
+                }
+
+                $Dest = Join-Path $Workspace $DestName
                 Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
 
                 $ArtifactPath = $Artifact
@@ -143,6 +149,7 @@ function Copy-CpsPackage {
             }
         }
     }
+
     # --------------------------
     # CPSPortal Logic
     # --------------------------

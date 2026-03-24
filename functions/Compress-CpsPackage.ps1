@@ -94,6 +94,11 @@ function Compress-CpsPackage {
             $PkgVer = $Parts[2]
         }
 
+        { $Parts[0] -eq 'CPSIdentity' } {
+            $PkgId  = 'SOA_IDN'
+            $PkgVer = $Parts[1] -replace '^v', ''
+        }
+        
         { $Parts.Count -ge 3 -and $Parts[1] -eq 'ARMS' } {
             $PkgId  = 'SOA_CPSSG'
             $PkgVer = $Parts[2]

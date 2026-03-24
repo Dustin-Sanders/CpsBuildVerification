@@ -57,19 +57,6 @@
       "Action": "Informational"
     },
     {
-      "RuleName": "Auto-Approve UI Asset Edits",
-      "Description": "Allows modifications to UI assets.",
-      "FileMatch": "*.aspx|*.js|*.html",
-      "AllowedChangeTypes": [
-        "LineModified",
-        "LineAddedInDifference",
-        "LineMissingInDifference",
-        "FileMissingInDifference",
-        "FileAddedInDifference"
-      ],
-      "Action": "Informational"
-    },
-    {
       "RuleName": "Auto-Approve FSC PowerShell Scripts",
       "Description": "Ignores cascading line differences in script files for FSC Letters and Statements.",
       "FileMatch": "*.ps1|*.psd1",
@@ -77,13 +64,43 @@
       "AllowedChangeTypes": [
         "*"
       ],
-      "Action": "Hide"
+      "Action": "Informational"
     },
-{
-      "RuleName": "Auto-Approve CPS SG UI Noise",
-      "Description": "Hides noise in specific UI directories.",
+	{
+      "RuleName": "Hide specific UI Assets Hierarchy",
+      "Description": "Ignores assets in the ng path.",
       "FileMatch": "*",
-      "FolderMatch": "assets|temp|test",
+      "FolderMatch": "UI/ng/assets",
+      "PathMatch": "*SOA_CPSSG*",	  
+      "Action": "Informational"
+    },
+	{
+      "RuleName": "Auto-Approve CPS Identity Churn",
+      "Description": "Approve changes in wwwroot.",
+      "FileMatch": "*.*",
+      "FolderMatch": "Web/wwwroot",	  
+      "PathMatch": "*CPSIdentity*|*SOA_IDN*",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+	{
+      "RuleName": "Auto-Approve CPS Identity Files with no Extension",
+      "Description": "Approve binary files that have no extension.",
+      "FileMatch": "CPSProxy|Web",
+      "PathMatch": "*CPSIdentity*|*SOA_IDN*",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+	{
+      "RuleName": "Auto-Approve CPS Identity Churn",
+      "Description": "Approve changes in wwwroot.",
+      "FileMatch": "*",
+      "FolderMatch": "Web/wwwroot",	  
+      "PathMatch": "*CPSIdentity*|*SOA_IDN*",
       "AllowedChangeTypes": [
         "*"
       ],

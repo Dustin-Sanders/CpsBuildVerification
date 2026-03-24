@@ -1,26 +1,21 @@
 ﻿#Script v1.0.5
 
-#$Source      = Get-ChildItem "C:\Users\DuSanders\Documents\ArtifactDefintionScripts\*" #-Recurse #-Include "functions", "Get-CpsBuild.ps1" -Recurse
-#$Destination = "C:\Users\DuSanders\OneDrive - Jack Henry\Documents\_CPS_2021\PowerShell\ArtifactDefinitionScripts"
-#Copy-Item -Path $Source -Destination "$Destination" -Force
-
 #Configuration variables
 $HomePath              = "$PSScriptRoot"
-$ErrorActionPreference = 'Stop'
+$ParametersPath        = Join-Path $HomePath "config\parameters.json"
 
-# Load parameters from config file
-$ParametersPath = Join-Path $HomePath "config\parameters.json"
-if (-not (Test-Path -LiteralPath $ParametersPath)) {
+if (-not (Test-Path -Path $ParametersPath)) {
     throw "Configuration file not found: $ParametersPath"
 }
-$Config = Get-Content $ParametersPath -Raw | ConvertFrom-Json
 
-$Drops      = $Config.Drops
-$SoaPath    = $Config.SoaPath
-$NetAppPath = $Config.NetAppPath
-$OctopusUrl = $Config.OctopusUrl
-$ApiKey     = $Config.ApiKey
-$SpaceName  = $Config.SpaceName
+$Config                = Get-Content $ParametersPath -Raw | ConvertFrom-Json
+$Drops                 = $Config.Drops
+$SoaPath               = $Config.SoaPath
+$NetAppPath            = $Config.NetAppPath
+$OctopusUrl            = $Config.OctopusUrl
+$ApiKey                = $Config.ApiKey
+$SpaceName             = $Config.SpaceName
+$ErrorActionPreference = 'Stop'
 
 #Source functions
 Get-ChildItem "$HomePath\functions\" -Filter "*.ps1" | ForEach-Object {. $_.FullName }
