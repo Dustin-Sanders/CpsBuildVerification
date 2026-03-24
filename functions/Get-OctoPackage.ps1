@@ -1,35 +1,12 @@
-﻿<#
+﻿#v1.0.1
+<#
 .SYNOPSIS
   Step 3 — Download latest package from Octopus
 
 .DESCRIPTION
   Resolves the Space by name, finds the latest version for pkgId on the built-in feed,
-  and downloads the package to the Workspace.
-
-.PARAMETER OctopusUrl
-  Octopus Server URL (e.g., https://octopus.jhapps.com)
-
-.PARAMETER ApiKey
-  Octopus API key (supply securely).
-
-.PARAMETER SpaceName
-  Name of the Space (e.g., CPS)
-
-.PARAMETER pkgId
-  The package ID (from Step 2).
-
-.PARAMETER Workspace
-  Optional. Destination folder for the downloaded .zip.
-  Defaults to Join-Path $env:USERPROFILE 'BuildAutomation'.
-
-.OUTPUTS
-  PSCustomObject with:
-    - DownloadedPath : [string]
-    - LatestVersion  : [string]
-    - pkgId          : [string]
-    - SpaceId        : [string]
+  and downloads the package to the Workspace (if it does not already exist locally).
 #>
-
 function Get-OctoPackage {
     [CmdletBinding()]
     param(
@@ -60,13 +37,17 @@ function Get-OctoPackage {
     }
     $latestVer = $latest.Items[0].Version
 
-    # Download the latest package
+    # Define the destination path
     $dest = Join-Path $Workspace ("{0}.{1}.zip" -f $pkgId, $latestVer)
-    $downloadUrl = "$OctopusUrl/api/$($space.Id)/packages/$pkgId.$latestVer/raw"
-
-    Invoke-RestMethod -Uri $downloadUrl -Headers $Headers -Method Get -OutFile $dest
-
-    Write-Host "  Downloaded: $pkgId $latestVer --> $dest"
+    
+    # --- NEW: Check if the file already exists ---
+    if (Test-Path -LiteralPath $dest) {
+        Write-Host "  Cached package found locally: $pkgId $latestVer" -ForegroundColor DarkGray
+    } else {
+        $downloadUrl = "$OctopusUrl/api/$($space.Id)/packages/$pkgId.$latestVer/raw"
+        Invoke-RestMethod -Uri $downloadUrl -Headers $Headers -Method Get -OutFile $dest
+        Write-Host "  Downloaded: $pkgId $latestVer --> $dest"
+    }
 
     [pscustomobject]@{
         DownloadedPath = $dest
