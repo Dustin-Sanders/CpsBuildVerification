@@ -75,17 +75,6 @@
       "Action": "Informational"
     },
 	{
-      "RuleName": "Auto-Approve CPS Identity Churn",
-      "Description": "Approve changes in wwwroot.",
-      "FileMatch": "*",
-      "FolderMatch": "Web/wwwroot",	  
-      "PathMatch": "*CPSIdentity*|*SOA_IDN*",
-      "AllowedChangeTypes": [
-        "*"
-      ],
-      "Action": "Informational"
-    },
-	{
       "RuleName": "Auto-Approve CPS Identity Files with no Extension",
       "Description": "Approve binary files that have no extension.",
       "FileMatch": "CPSProxy|Web",

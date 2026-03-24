@@ -71,8 +71,11 @@ function Get-CpsReport {
                 $folderMatch = $false
                 $folders = $rule.FolderMatch -split '\|'
                 foreach ($f in $folders) {
-                    # Create regex to ensure we match exact folder boundaries (\folder\)
-                    $escaped = [regex]::Escape($f.Trim())
+                    # Normalize slashes to backslashes to match Windows pathing and escape for Regex
+                    $normalized = $f.Trim().Replace("/", "\")
+                    $escaped = [regex]::Escape($normalized)
+                    
+                    # Match exact folder boundaries or path segments
                     $pattern = "(?:^|\\|/)$escaped(?:\\|/|$)"
                     
                     if ([string]$diff.ReferenceFullPath -match $pattern -or [string]$diff.DifferenceFullPath -match $pattern) {
