@@ -79,17 +79,15 @@
       ],
       "Action": "Hide"
     },
-	{
-      "RuleName": "Auto-Approve CPS SG UI > ng > assets",
-      "Description": "Ignores cascading line differences in script files for FSC Letters and Statements.",
-      "FileMatch": "*.png|*.ico|*.gif|*.css|*.sqlite|*.eot|*.ttf|*.svg|*.woff|*.webp|*.ali|*.map",
-      "PathMatch": "*CPSServicesGateway*|*SOA_CPSSG*",
+{
+      "RuleName": "Auto-Approve CPS SG UI Noise",
+      "Description": "Hides noise in specific UI directories.",
+      "FileMatch": "*",
+      "FolderMatch": "assets|temp|test",
       "AllowedChangeTypes": [
-        "FileMissingInDifference",
-		"BinaryChecksumMismatch",
-		"FileAddedInDifference"
+        "*"
       ],
       "Action": "Informational"
-    }    
+    }
   ]
 }

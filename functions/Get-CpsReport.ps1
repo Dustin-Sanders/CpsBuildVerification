@@ -1,4 +1,4 @@
-﻿#v1.0.2
+﻿#v1.0.3
 function Get-CpsReport {
     [CmdletBinding()]
     param(
@@ -39,16 +39,22 @@ function Get-CpsReport {
         foreach ($rule in $rules) {
             $isMatch = $false
             
-            $patterns = $rule.FileMatch -split '\|'
-            foreach ($pattern in $patterns) {
-                if ($diff.FileName -like $pattern) {
-                    $isMatch = $true
-                    break
+            # --- FileMatch Logic ---
+            if ($null -ne $rule.FileMatch -and $rule.FileMatch -ne "") {
+                $patterns = $rule.FileMatch -split '\|'
+                foreach ($pattern in $patterns) {
+                    if ($diff.FileName -like $pattern) {
+                        $isMatch = $true
+                        break
+                    }
                 }
+            } else {
+                # If FileMatch is missing or explicitly empty, assume true so other filters can evaluate
+                $isMatch = $true 
             }
 
-            # --- Path Matching Logic ---
-            if ($isMatch -and $null -ne $rule.PathMatch) {
+            # --- PathMatch Logic ---
+            if ($isMatch -and $null -ne $rule.PathMatch -and $rule.PathMatch -ne "") {
                 $pathMatch = $false
                 $pathPatterns = $rule.PathMatch -split '\|'
                 foreach ($pp in $pathPatterns) {
@@ -60,6 +66,24 @@ function Get-CpsReport {
                 $isMatch = $pathMatch
             }
 
+            # --- FolderMatch Logic ---
+            if ($isMatch -and $null -ne $rule.FolderMatch -and $rule.FolderMatch -ne "") {
+                $folderMatch = $false
+                $folders = $rule.FolderMatch -split '\|'
+                foreach ($f in $folders) {
+                    # Create regex to ensure we match exact folder boundaries (\folder\)
+                    $escaped = [regex]::Escape($f.Trim())
+                    $pattern = "(?:^|\\|/)$escaped(?:\\|/|$)"
+                    
+                    if ([string]$diff.ReferenceFullPath -match $pattern -or [string]$diff.DifferenceFullPath -match $pattern) {
+                        $folderMatch = $true
+                        break
+                    }
+                }
+                $isMatch = $folderMatch
+            }
+
+            # --- Apply rule action if all defined conditions match ---
             if ($isMatch) {
                 $typeMatch = $false
                 if ($rule.AllowedChangeTypes -contains '*') {
@@ -86,7 +110,7 @@ function Get-CpsReport {
 
     Write-Host "  Building HTML report..." -ForegroundColor DarkGray
 
-    # --- NEW: Filter out 'Hide' items before generating HTML ---
+    # --- Filter out 'Hide' items before generating HTML ---
     $visibleResults = @($resultsArray | Where-Object { $_.Status -ne "Hide" })
 
     $HtmlHead = @"
