@@ -77,7 +77,7 @@
 	{
       "RuleName": "Auto-Approve CPS Identity Churn",
       "Description": "Approve changes in wwwroot.",
-      "FileMatch": "*.*",
+      "FileMatch": "*",
       "FolderMatch": "Web/wwwroot",	  
       "PathMatch": "*CPSIdentity*|*SOA_IDN*",
       "AllowedChangeTypes": [
