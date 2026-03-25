@@ -28,7 +28,7 @@ $A = Copy-CpsPackage -Drops $Drops -SoaPath $SoaPath -NetAppPath $NetAppPath -Wo
 Write-Host ("  Artifact: {0}"  -f $A.ArtifactName)
 Write-Host ("  Staged to: {0}" -f $A.StagedPath)
 
-# Step 2 — Compress the CPS build.
+#Step 2 — Compress the CPS build.
 
 Write-Host "`nStep 2 - Compressing the build." -ForegroundColor Cyan
 $B = Compress-CpsPackage -ArtifactName $A.ArtifactName -Workspace $A.Workspace -StagedPath $A.StagedPath
@@ -37,14 +37,14 @@ Write-Host ("  PkgId : {0}" -f $B.PkgId)
 Write-Host ("  PkgVer: {0}" -f $B.PkgVer)
 Write-Host ("  Zip   : {0}" -f $B.ZipPath)
 
-# Step 3 — Download the latest package from Octopus that matches the application from step one.
+#Step 3 — Download the latest package from Octopus that matches the application from step one.
 
 Write-Host "`nStep 3 - Downloading the latest package from Octopus." -ForegroundColor Cyan
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
 
-# Set the default comparison paths
+#Set the default comparison paths
 $ReferencePath = $A.StagedPath
 $DifferencePath = $C.DownloadedPath
 
@@ -58,23 +58,21 @@ if ($B.pkgId -match '^ETL_FSC') {
     $ReferencePath = Package-FscBuild -OctopusZipPath $C.DownloadedPath -PartialDropPath $A.StagedPath -Workspace $A.Workspace -PkgId $B.pkgId -PkgVer $B.pkgVer
 }
 
-# ------------------------------------------
-# Step 4 — Compare builds and generate reports
-# ------------------------------------------
+#Step 4 — Compare builds and generate reports
 Write-Host "`n[Step 4] Compare builds and generate reports..." -ForegroundColor Cyan
 
-# 1. Run the Comparison
+#Run the comparison
 $DiffResults = Compare-CpsBuilds -ReferencePath $ReferencePath -DifferencePath $DifferencePath
 
 Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
 
-# 2. Define the paths
+#Define paths
 $timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
 $baseName   = "Diff_{0}_{1}_vs_{2}_{3}_{4}" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
 $reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.html")
 $csvPath    = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.csv")
 
-# 3. Generate HTML Report
+#Generate the HTML Report
 Get-CpsReport -DiffResults @($DiffResults) -ReportPath $reportPath -PkgId $B.pkgId -PkgVer $B.pkgVer -LatestVersion $C.LatestVersion
 
 # 4. Generate the Temporary CSV for Baseline Profiling

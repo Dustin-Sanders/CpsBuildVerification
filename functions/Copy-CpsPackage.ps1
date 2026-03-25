@@ -1,4 +1,4 @@
-﻿#Version 1.0.3
+﻿#Version 1.0.4
 
 function Copy-CpsPackage {
     [CmdletBinding()]
@@ -26,7 +26,8 @@ function Copy-CpsPackage {
             [Parameter(Mandatory=$true)][string]$Source,
             [Parameter(Mandatory=$true)][string]$Destination,
             [switch]$Overlay,
-            [string[]]$Exclude = @()
+            [string[]]$ExcludeDirs = @(),
+            [string[]]$ExcludeFiles = @()
         )
 
         # Ensure destination exists
@@ -36,9 +37,17 @@ function Copy-CpsPackage {
         $mode = if ($Overlay) { '/E' } else { '/MIR' }
         
         $args = @($Source, $Destination, $mode, '/ETA')
-        if ($Exclude -and $Exclude.Count) {
+        
+        # Explicitly handle Directory Exclusions (/XD)
+        if ($ExcludeDirs -and $ExcludeDirs.Count) {
             $args += '/XD'
-            $args += $Exclude
+            $args += $ExcludeDirs
+        }
+        
+        # Explicitly handle File Exclusions (/XF)
+        if ($ExcludeFiles -and $ExcludeFiles.Count) {
+            $args += '/XF'
+            $args += $ExcludeFiles
         }
 
         & robocopy @args | Out-Host
@@ -66,7 +75,10 @@ function Copy-CpsPackage {
     $ArtifactPath = $null
     $StagedPath   = $null
     $AppFamily    = $AppPath.Name
-    $Exclude      = @("Database*", "Document*", "*.zip")
+    
+    # --- NEW: Explicitly define files vs directories ---
+    $ExcludeDirs  = @("Database*", "Document*")
+    $ExcludeFiles = @("*.zip")
 
     # --------------------------
     # PPSSOA Logic
@@ -85,7 +97,7 @@ function Copy-CpsPackage {
                 if (-not $Artifact) { throw "No artifact selected under '$($AppPath.FullName)'." }
 
                 $Root = Join-Path $Workspace $Artifact.Name
-                Copy-App -Source $Artifact.FullName -Destination (Join-Path $Root 'InstanceSource') -Exclude $Exclude
+                Copy-App -Source $Artifact.FullName -Destination (Join-Path $Root 'InstanceSource') -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
                 Copy-App -Source $NetAppPath        -Destination (Join-Path $Root 'Service')
 
                 $ArtifactPath = $Artifact
@@ -102,10 +114,10 @@ function Copy-CpsPackage {
 
                 $Dest = Join-Path $Workspace $Artifact.Name
                 if ($Card.Name -match 'MasterCard|Visa|Discover') {
-                    Copy-App -Source (Join-Path $Artifact.FullName 'Code') -Destination $Dest -Exclude $Exclude
+                    Copy-App -Source (Join-Path $Artifact.FullName 'Code') -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
                 }
                 else {
-                    Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
+                    Copy-App -Source $Artifact.FullName -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
                 }
 
                 $ArtifactPath = $Artifact
@@ -120,13 +132,13 @@ function Copy-CpsPackage {
                 $Dest = Join-Path $Workspace ("{0}_{1}" -f $AppPath.Name, $Artifact.Name)
                 
                 Write-Host "  Copying selected artifact $($Artifact.Name)..." -ForegroundColor DarkGray
-                Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
+                Copy-App -Source $Artifact.FullName -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
 
                 $ArtifactPath = $Artifact
                 $StagedPath   = $Dest
             }
 
-            # --- Other SOA ---
+           # --- Other SOA ---
             '^(MAIN_SOA_CPSServicesGateway|CPSIdentity|MAIN_SOA_CTS|MAIN_SOA_ARMS)$' {
                 $Artifact = Select-Folder -Path $AppPath.FullName
                 if (-not $Artifact) { throw "No artifact selected under '$($AppPath.FullName)'." }
@@ -138,7 +150,14 @@ function Copy-CpsPackage {
                 }
 
                 $Dest = Join-Path $Workspace $DestName
-                Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
+                
+                # If it's ARMS, dive one level deeper into the 'Code' directory
+                if ($AppPath.Name -eq 'MAIN_SOA_ARMS') {
+                    Copy-App -Source (Join-Path $Artifact.FullName 'Code') -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
+                }
+                else {
+                    Copy-App -Source $Artifact.FullName -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
+                }
 
                 $ArtifactPath = $Artifact
                 $StagedPath   = $Dest
@@ -160,7 +179,7 @@ function Copy-CpsPackage {
         if (-not $Artifact) { throw "No artifact selected under '$($AppPath.FullName)'." }
 
         $Dest = Join-Path $Workspace ("CPSPortal_{0}" -f $Artifact.Name)
-        Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
+        Copy-App -Source $Artifact.FullName -Destination $Dest -ExcludeDirs $ExcludeDirs -ExcludeFiles $ExcludeFiles
 
         $ArtifactPath = $Artifact
         $StagedPath   = $Dest

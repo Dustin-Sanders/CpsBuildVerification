@@ -104,9 +104,9 @@ function Compress-CpsPackage {
             $PkgVer = $Parts[2]
         }
 
-        { $Parts.Count -ge 3 -and $Parts[1] -eq 'CTS' } {
+        { $Parts.Count -ge 3 -and $Parts[2] -eq 'CTS' } {
             $PkgId  = 'SOA_CTS'
-            $PkgVer = $Parts[2]
+            $PkgVer = $Parts[4]
         }
 
         { $Parts.Count -ge 2 -and $Parts[0] -eq 'CPSPortal' } {

@@ -22,7 +22,7 @@
     {
       "RuleName": "Auto-Approve Assembly Config Edits",
       "Description": "Allows all changes to auto-generated assembly and dependency configs.",
-      "FileMatch": "*.dll.config|*.deps.json",
+      "FileMatch": "*.dll.config|*.deps.json|*.exe.config|*.rsp",
       "AllowedChangeTypes": [
         "*"
       ],
@@ -71,7 +71,7 @@
       "Description": "Ignores assets in the ng path.",
       "FileMatch": "*",
       "FolderMatch": "UI/ng/assets",
-      "PathMatch": "*SOA_CPSSG*",	  
+      "PathMatch": "*CPS_ServicesGateway*|*SOA_CPSSG*",
       "Action": "Informational"
     },
 	{
@@ -88,8 +88,18 @@
       "RuleName": "Auto-Approve CPS Identity Churn",
       "Description": "Approve changes in wwwroot.",
       "FileMatch": "*",
-      "FolderMatch": "Web/wwwroot",	  
+      "FolderMatch": "Web/wwwroot",
       "PathMatch": "*CPSIdentity*|*SOA_IDN*",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+	{
+      "RuleName": "Auto-Approve CPS Tokenization Targets",
+      "Description": "Approve changes to targets.",
+      "FileMatch": "*.targets",
+      "PathMatch": "*SOA_CTS*",
       "AllowedChangeTypes": [
         "*"
       ],
