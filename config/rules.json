@@ -55,7 +55,9 @@
         "TypeOrNullMismatch"
       ],
       "Action": "Informational"
-    },
+    }
+  ],
+  "ApplicationRules": [
     {
       "RuleName": "Auto-Approve FSC PowerShell Scripts",
       "Description": "Ignores cascading line differences in script files for FSC Letters and Statements.",
@@ -66,7 +68,7 @@
       ],
       "Action": "Informational"
     },
-	{
+    {
       "RuleName": "Hide specific UI Assets Hierarchy",
       "Description": "Ignores assets in the ng path.",
       "FileMatch": "*",
@@ -74,7 +76,7 @@
       "PathMatch": "*CPS_ServicesGateway*|*SOA_CPSSG*",
       "Action": "Informational"
     },
-	{
+    {
       "RuleName": "Auto-Approve CPS Identity Files with no Extension",
       "Description": "Approve binary files that have no extension.",
       "FileMatch": "CPSProxy|Web",
@@ -84,7 +86,7 @@
       ],
       "Action": "Informational"
     },
-	{
+    {
       "RuleName": "Auto-Approve CPS Identity Churn",
       "Description": "Approve changes in wwwroot.",
       "FileMatch": "*",
@@ -95,11 +97,21 @@
       ],
       "Action": "Informational"
     },
-	{
+    {
       "RuleName": "Auto-Approve CPS Tokenization Targets",
       "Description": "Approve changes to targets.",
       "FileMatch": "*.targets",
       "PathMatch": "*SOA_CTS*",
+      "AllowedChangeTypes": [
+        "*"
+      ],
+      "Action": "Informational"
+    },
+    {
+      "RuleName": "Auto-Approve NetApp Changes",
+      "Description": "Approve changes in the service directory for NetApp applications.",
+      "FolderMatch": "Service",
+      "PathMatch": "*NJCINIS*|*SOA_INISNJC*|*CPIINIS*|*SOA_INISCPI*|*JBGRPSCU*|*SOA_CPS382WS*|*FCS_RTP*|*SOA_FSCRTP*",
       "AllowedChangeTypes": [
         "*"
       ],
