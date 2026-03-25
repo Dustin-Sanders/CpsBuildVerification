@@ -120,7 +120,7 @@ function Copy-CpsPackage {
                 $Dest = Join-Path $Workspace ("{0}_{1}" -f $AppPath.Name, $Artifact.Name)
                 
                 Write-Host "  Copying selected artifact $($Artifact.Name)..." -ForegroundColor DarkGray
-                Copy-App -Source $Artifact.FullName -Destination $Dest
+                Copy-App -Source $Artifact.FullName -Destination $Dest -Exclude $Exclude
 
                 $ArtifactPath = $Artifact
                 $StagedPath   = $Dest
