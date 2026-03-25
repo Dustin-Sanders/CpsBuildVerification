@@ -100,7 +100,12 @@ function Compress-CpsPackage {
         }
         
         { $Parts.Count -ge 3 -and $Parts[1] -eq 'ARMS' } {
-            $PkgId  = 'SOA_CPSSG'
+            $PkgId  = 'SOA_RM'
+            $PkgVer = $Parts[2]
+        }
+
+        { $Parts.Count -ge 3 -and $Parts[1] -eq 'CTS' } {
+            $PkgId  = 'SOA_CTS'
             $PkgVer = $Parts[2]
         }
 
