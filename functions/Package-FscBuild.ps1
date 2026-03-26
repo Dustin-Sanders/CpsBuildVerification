@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Step 3.5 — Package full build for partial drops
+  Step 3.5 ï¿½ Package full build for partial drops
 
 .DESCRIPTION
   Takes a downloaded Octopus package (the base), unzips it, and then overlays 
@@ -32,10 +32,10 @@ function Package-FscBuild {
     Expand-Archive -Path $OctopusZipPath -DestinationPath $FscPackagedPath -Force
 
     Write-Host "    Overlaying partial drop on top of base..." -ForegroundColor DarkGray
-    $args = @($PartialDropPath, $FscPackagedPath, '/E', '/ETA')
+    $Arguements = @($PartialDropPath, $FscPackagedPath, '/E', '/ETA')
     
     # Hide the standard output but capture the exit code
-    & robocopy @args | Out-Null
+    & robocopy @Arguements | Out-Null
     $Code = $LASTEXITCODE
 
     # Robocopy success codes: 0 (No changes), 1 (Files copied), 2 (Extra files), 3 (Both 1 and 2)
