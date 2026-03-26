@@ -110,6 +110,7 @@
     {
       "RuleName": "Auto-Approve NetApp Changes",
       "Description": "Approve changes in the service directory for NetApp applications.",
+      "FileMatch": "*",
       "FolderMatch": "Service",
       "PathMatch": "*NJCINIS*|*SOA_INISNJC*|*CPIINIS*|*SOA_INISCPI*|*JBGRPSCU*|*SOA_CPS382WS*|*FCS_RTP*|*SOA_FSCRTP*",
       "AllowedChangeTypes": [
