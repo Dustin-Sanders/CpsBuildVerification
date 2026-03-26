@@ -27,7 +27,7 @@ function Get-CpsReport {
         $ruleData = Get-Content $rulesPath -Raw | ConvertFrom-Json
         # Append rules from both arrays into a single list for evaluation
         if ($null -ne $ruleData.GlobalRules) { $rules += $ruleData.GlobalRules }
-        if ($null -ne $ruleData.Application) { $rules += $ruleData.Application }
+        if ($null -ne $ruleData.Application) { $rules += $ruleData.ApplicationRules }
     } else {
         Write-Warning "  rules.json not found at $rulesPath. All differences will be marked as Reject."
     }
