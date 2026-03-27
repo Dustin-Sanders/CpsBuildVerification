@@ -30,7 +30,7 @@ Write-Host ("  Staged to: {0}" -f $A.StagedPath)
 
 #Step 2 — Compress the CPS build.
 
-Write-Host "`nStep 2 - Compressing the build." -ForegroundColor Cyan
+Write-Host "`nStep 2 - Compressing the build" -ForegroundColor Cyan
 $B = Compress-CpsPackage -ArtifactName $A.ArtifactName -Workspace $A.Workspace -StagedPath $A.StagedPath
 
 Write-Host ("  PkgId : {0}" -f $B.PkgId)
@@ -39,7 +39,7 @@ Write-Host ("  Zip   : {0}" -f $B.ZipPath)
 
 #Step 3 — Download the latest package from Octopus that matches the application from step one.
 
-Write-Host "`nStep 3 - Downloading the latest package from Octopus." -ForegroundColor Cyan
+Write-Host "`nStep 3 - Downloading the latest package from Octopus" -ForegroundColor Cyan
 $C = Get-OctoPackage -OctopusUrl $OctopusUrl -ApiKey $ApiKey -SpaceName $SpaceName -pkgId $B.pkgId -Workspace $A.Workspace
 
 Write-Host ("  Downloaded: {0}" -f $C.DownloadedPath)
@@ -58,27 +58,29 @@ if ($B.pkgId -match '^ETL_FSC') {
     $ReferencePath = Package-FscBuild -OctopusZipPath $C.DownloadedPath -PartialDropPath $A.StagedPath -Workspace $A.Workspace -PkgId $B.pkgId -PkgVer $B.pkgVer
 }
 
-#Step 4 — Compare builds and generate reports
+# ------------------------------------------
+# Step 4 — Compare builds and generate reports
+# ------------------------------------------
 Write-Host "`n[Step 4] Compare builds and generate reports..." -ForegroundColor Cyan
 
-#Run the comparison
+# 1. Run the Comparison
 $DiffResults = Compare-CpsBuilds -ReferencePath $ReferencePath -DifferencePath $DifferencePath
 
 Write-Host ("  Found {0} differences." -f $DiffResults.Count) -ForegroundColor Yellow
 
-#Define paths
+# 2. Define the paths
 $timestamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
 $baseName   = "Diff_{0}_{1}_vs_{2}_{3}_{4}" -f $B.pkgId, $B.pkgVer, $B.pkgId, $C.LatestVersion, $timestamp
 $reportPath = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.html")
 $csvPath    = Join-Path $A.Workspace (Join-Path 'ComparisonLogs' "$baseName.csv")
 
-#Generate the HTML Report
-Get-CpsReport -DiffResults @($DiffResults) -ReportPath $reportPath -PkgId $B.pkgId -PkgVer $B.pkgVer -LatestVersion $C.LatestVersion
+# 3. Generate HTML & CSV Reports Together
+Get-CpsReport -DiffResults @($DiffResults) `
+              -ReportPath $reportPath `
+              -CsvPath $csvPath `
+              -PkgId $B.pkgId `
+              -PkgVer $B.pkgVer `
+              -LatestVersion $C.LatestVersion
 
-# 4. Generate the Temporary CSV for Baseline Profiling
-if ($DiffResults.Count -gt 0) {
-    Export-CpsDiffCsv -DiffResults @($DiffResults) -CsvPath $csvPath
-}
-
-# 5. Open the folder so you can grab the CSVs easily
-Invoke-Item (Split-Path $csvPath)
+# 4. Open the folder so you can grab the reports easily
+Invoke-Item (Split-Path $reportPath)

@@ -1,4 +1,4 @@
-﻿#v1.0.3
+﻿#v1.0.4
 function Get-CpsReport {
     [CmdletBinding()]
     param(
@@ -7,6 +7,7 @@ function Get-CpsReport {
         [array]$DiffResults,
         
         [Parameter(Mandatory=$true)][string]$ReportPath,
+        [Parameter(Mandatory=$true)][string]$CsvPath,
         [Parameter(Mandatory=$true)][string]$PkgId,
         [Parameter(Mandatory=$true)][string]$PkgVer,
         [Parameter(Mandatory=$true)][string]$LatestVersion
@@ -27,7 +28,7 @@ function Get-CpsReport {
         $ruleData = Get-Content $rulesPath -Raw | ConvertFrom-Json
         # Append rules from both arrays into a single list for evaluation
         if ($null -ne $ruleData.GlobalRules) { $rules += $ruleData.GlobalRules }
-        if ($null -ne $ruleData.Application) { $rules += $ruleData.ApplicationRules }
+        if ($null -ne $ruleData.ApplicationRules) { $rules += $ruleData.ApplicationRules }
     } else {
         Write-Warning "  rules.json not found at $rulesPath. All differences will be marked as Reject."
     }
@@ -321,6 +322,16 @@ function Get-CpsReport {
 "@
 
     Set-Content -Path $ReportPath -Value ($HtmlHead + $HtmlBody.ToString() + $HtmlFoot) -Encoding UTF8
+    
+    if ($resultsArray.Count -gt 0) {
+        Write-Host "  Generating CSV report..." -ForegroundColor DarkGray
+        
+        # Export the entire array so the baseline CSV correctly tracks 'Hide' items as well
+        $resultsArray | Select-Object FileName, ReferenceFullPath, DifferenceFullPath, ChangeType, Location, ItemName, ItemProperty, ReferenceValue, DifferenceValue, Status | 
+            Export-Csv -Path $CsvPath -NoTypeInformation -Encoding UTF8
+            
+        Write-Host ("  CSV Report generated: {0}" -f $CsvPath) -ForegroundColor Green
+    }
     
     if ($finalStatus -eq "Approved") {
         Write-Host "  Build status: Approved" -ForegroundColor Green
